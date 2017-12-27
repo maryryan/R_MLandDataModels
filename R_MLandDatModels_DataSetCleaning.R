@@ -19,6 +19,8 @@ library(plyr)
 library(lubridate)
 
 #### LOAD ORIGINAL FILES ####
+## data originally obtained from EPA BEACON 2.0:
+## https://watersgeo.epa.gov/beacon2/reports.html
 wq <- read.csv('water_quality_report.csv', header=TRUE)
 action <- read.csv('beach_actions_(advisories_and_closures)_-_detailed_report.csv',
                             header=TRUE)
