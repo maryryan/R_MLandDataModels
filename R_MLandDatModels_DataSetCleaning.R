@@ -26,17 +26,30 @@ action <- read.csv('beach_actions_(advisories_and_closures)_-_detailed_report.cs
                             header=TRUE)
 
 #### WATER QUALITY DATASET ####
-wq.trunc <- wq[,c("Beach.ID.Def..", "Start.Date.Def..", "CharacteristicName.Def..",
-                 "Result.ValueText.Def..", "Result.Value.Def..",
+wq.trunc <- wq[,c("Beach.ID.Def..", "CountyName.Def..", 
+                  "Start.Date.Def..", "CharacteristicName.Def..",
+                  "Result.Value.Def..",
                  "Result.MeasureUnit")]
+
 ## making the observation date as common date format ##
 wq.trunc$Start.Date.Def.. <- as.Date(wq.trunc$Start.Date.Def..,
-                                     format='%m-%d-%Y')
+                                     format='%m/%d/%y')
 ## restricting our dataset to June 1, 2016  - Aug 1, 2016 ##
-wq.trunc <- wq.trunc[wq.trunc$Start.Date.Def.. %within% c(as.Date("2016-06-01") %--% as.Date("2016-08-01")), ]
+wq.trunc <- wq.trunc[wq.trunc$Start.Date.Def.. %within% c(as.Date("2016-06-01", format="%Y-%m-%d") %--% as.Date("2016-08-01", format="%Y-%m-%d")), ]
 colnames(wq.trunc)[1] <- "Beach.ID"
+
+## make separate variables for "Enterococcus" & "Escherichia coli" measures ##
+wq.trunc$ecoliValue <- ifelse(wq.trunc$CharacteristicName.Def..=="Escherichia coli",
+                              wq.trunc$Result.Value.Def.., NA)
+wq.trunc$ecoliUnit <- ifelse(wq.trunc$CharacteristicName.Def..=="Escherichia coli",
+                             as.character(wq.trunc$Result.MeasureUnit), NA)
+wq.trunc$EnterocValue <- ifelse(wq.trunc$CharacteristicName.Def..=="Enterococcus",
+                           wq.trunc$Result.Value.Def.., NA)
+wq.trunc$EnterocUnit <- ifelse(wq.trunc$CharacteristicName.Def..=="Enterococcus",
+                                as.character(wq.trunc$Result.MeasureUnit), NA)
+
 #### BEACH ACTION DATASET ####
-action.trunc <- action[, c("Beach.Id", "Beach.Status", "Action.Type",
+action.trunc <- action[, c("County", "Beach.Id", "Beach.Status", "Action.Type",
                            "ActionStartDate","ActionEndDate",
                            "ActionDuration.Days", "Action.Reasons",
                            "Action.Possible.Source")]
@@ -52,7 +65,8 @@ action.list.order <- lapply(action.list, function(df){
 })
 ## 62 days between Jun 1 - Aug 1
 action.expanded.list <- lapply(action.list.order, function(df){
-   Beach.Id <- rep(df[1,1], 62)
+   Beach.Id <- rep(df[1,2], 62)
+   County <- rep(df[1,1], 62)
    datesFull <- seq(as.Date("2016-06-01"), as.Date("2016-08-01"), by="days")
    actions.l <- list()
    reasons.l <- list()
@@ -85,14 +99,22 @@ action.expanded.list <- lapply(action.list.order, function(df){
       }
    }
       
-   set <- as.data.frame(cbind(ids, datesFull, actions.v, reasons.v,
-                              possibleSource.v))
-   set[,2] <- as.Date(set[,2], origin='1970-01-01')
+   set <- as.data.frame(cbind(Beach.Id, County, datesFull, actions.v,
+                              reasons.v,possibleSource.v))
+   set[,3] <- as.Date(set[,3], origin='1970-01-01')
    set[1:62,]
 })
 action.expanded <- ldply(action.expanded.list, data.frame)
 action.expanded <- action.expanded[,-2]
-colnames(action.expanded) <- c("Beach.ID", "Date", "Action", "Reason", "PossibleSource")
+colnames(action.expanded) <- c("Beach.ID", "County", "Date", "Action", "Reason", "PossibleSource")
+counties <- cbind(1:12,levels(action.trunc$County))
+colnames(counties) <- c("countyID", "County")
+action.expanded.m <- merge(counties, action.expanded,
+                           by.x="countyID", by.y="County", all=T)
+action.expanded.m <- action.expanded.m[,-1]
+action.expanded.m[,1:2] <- action.expanded.m[,c(2,1)]
+colnames(action.expanded.m)[1:2] <- c("Beach.ID", "County")
+
 #### ACTION LEVEL CODES ####
 #1=closure
 #2=contamination advisory
@@ -115,13 +137,13 @@ colnames(action.expanded) <- c("Beach.ID", "Date", "Action", "Reason", "Possible
 
 #### MERGE INTO ONE DATASET ####
 ## match on both beach ID and date ##
-beaches <- merge(action.expanded, wq.trunc,
-                 by.x=c('Beach.ID', 'Date'),
-                 by.y=c("Beach.ID", "Start.Date.Def.."),
+beaches <- merge(action.expanded.m, wq.trunc,
+                 by.x=c('Beach.ID', 'Date', "County"),
+                 by.y=c("Beach.ID", "Start.Date.Def..", "CountyName.Def.."),
                  all=TRUE)
 
-colnames(beaches)[c(2,6:9)] <- c("CalendarDate", "MeasureType",
-                                  "WQ.ValueText", "WQ.Value", "WQ.MeasureUnit")
+colnames(beaches)[c(2,7:9)] <- c("CalendarDate", "MeasureType",
+                                 "WQ.Value", "WQ.MeasureUnit")
 
 ## creating binary variables ##
 beaches$closure <- ifelse(beaches$Action==1, 1, 0)
@@ -145,6 +167,9 @@ beaches$Source.SSO <- ifelse(beaches$PossibleSource==5, 1, 0)
 beaches$Source.Storm <- ifelse(beaches$PossibleSource==6, 1, 0)
 beaches$Source.Unknown <- ifelse(beaches$PossibleSource==7, 1, 0)
 beaches$Source.Wildlife <- ifelse(beaches$PossibleSource==8, 1, 0)
+
+## creating time variable as days since June 1 ##
+beaches$daysSinceJune1 <- as.Date(beaches$CalendarDate, format='%Y-%m-%d') - as.Date('2016-06-01', format='%Y-%m-%d')
 
 #### EXPORT FINAL DATASET ####
 write.csv(beaches, 'beaches.csv')
