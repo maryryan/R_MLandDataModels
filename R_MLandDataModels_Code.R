@@ -16,6 +16,7 @@ library(nlme)
 #### LOAD DATA ####
 beaches <- read.csv('beaches.csv', header=T)
 beaches <- beaches[,-1]
+staar <- read.csv('staar.csv', header=T)
 
 ## split into fresh and saltwater beaches ##
 beaches.fresh <- beaches[which(beaches$MeasureType=="Escherichia coli"),]

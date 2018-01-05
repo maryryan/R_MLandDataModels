@@ -1,6 +1,6 @@
 #########################
 ############################# R: MACHINE LEARNING AND DATA MODELS
-############################# DATA SET CREATION/COMBINATION
+############################# NY BEACHES DATA SET CREATION/COMBINATION
 ############################# MARY RYAN
 ############################# NICAR 2018
 ############################# MARCH 8-11
