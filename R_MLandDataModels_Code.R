@@ -9,6 +9,7 @@
 #install.packages('gee')
 #install.packages('survival')
 #install.packages('nlme')
+
 library(gee)
 library(survival)
 library(nlme)
@@ -16,8 +17,73 @@ library(nlme)
 #### LOAD DATA ####
 beaches <- read.csv('beaches.csv', header=T)
 beaches <- beaches[,-1]
-staar <- read.csv('staar.csv', header=T)
+house.edu <- read.csv('house_edu.csv', header=T)
+house.edu <- house.edu[,-1]
 
+####
+######## CONTINUOUS DATA (HOUSE.EDU) ########
+####
+
+#### PLOT ALL DATA TOGETHER AND FIND TREND ####
+par(mfrow=c(1,1))
+plot(house.edu$yrsSince2009, house.edu$Median)
+abline(lm(house.edu$Median ~ house.edu$yrsSince2009))
+
+#### PLOT ALL DATA TOGETHER, BUT SPLINING THE TREND OF THE COUNTIES ####
+par(mfrow=c(1,1))
+plot(house.edu$yrsSince2009, house.edu$Median,
+     col=house.edu$countyID)
+
+#### INDIVIDUAL LINEAR REGRESSIONS ####
+house.edu.grouped <- groupedData( Median ~ yrsSince2009 | countyID,
+                                  data=house.edu )
+
+indiv.house.edu.lm <- lmList( Median ~ yrsSince2009 | countyID,
+                        data=house.edu.grouped )
+
+## creating forest plots of the intercepts & slopes of all the regressions ##
+len <- length(indiv.house.edu.lm)
+forest.matrix <- matrix(NA, nrow = len, ncol = 7)
+forest.matrix[,1] <- names(indiv.house.edu.lm)
+forest.matrix[,2] <- intervals(indiv.house.edu.lm)[1:len]
+forest.matrix[,3] <- intervals(indiv.house.edu.lm)[(len+1):(2*len)]
+forest.matrix[,4] <- intervals(indiv.house.edu.lm)[(2*len + 1):(3*len)]
+forest.matrix[,5] <- intervals(indiv.house.edu.lm)[(3*len + 1):(4*len)]
+forest.matrix[,6] <- intervals(indiv.house.edu.lm)[(4*len + 1):(5*len)]
+forest.matrix[,7] <- intervals(indiv.house.edu.lm)[(5*len + 1):(6*len)]
+
+par(mfrow = c(1,2))
+plot( forest.matrix[1,2:4], rep(1, 3), type = "l", ylim = c(1, len),
+      xlim=c(70000,210000),xlab = "Intercept", ylab= "Order of Intercept")
+for( j in 1:length(unique(forest.matrix[,1]))){
+   lines(forest.matrix[j,2:4], rep(j, 3))
+   
+}
+
+plot( forest.matrix[1,5:7], rep(1, 3), type = "l", ylim = c(1, len),
+      xlim=c(-200,12000), xlab = "Slope", ylab= "Order of Intercept")
+for( j in 1:length(unique(forest.matrix[,1]))){
+   lines(forest.matrix[j,5:7], rep(j, 3))
+   
+}
+mtext("Random Intercepts & Slopes of Texas Median Home Values", outer=TRUE,
+      line=-2)
+
+#### RANDOM INTERCEPTS ####
+
+#### RANDOM SLOPES ####
+
+#### GENERALIZED ESTIMATING EQUATIONS (GEES) ####
+house.edu.gee <- gee(Median ~ BApctTotPop18plus + yrsSince2009,
+                     id=countyID,
+                     data=house.edu,
+                     family=gaussian,
+                     corstr="AR-M",
+                     Mv=1)
+
+####
+######## BINARY DATA (BEACHES) ########
+####
 ## split into fresh and saltwater beaches ##
 beaches.fresh <- beaches[which(beaches$MeasureType=="Escherichia coli"),]
 beaches.fresh <- beaches.fresh[,c(-7, -8, -9, -12, -13)]
