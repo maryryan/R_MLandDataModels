@@ -22,7 +22,7 @@ library(splines)
 library(gee)
 library(survival)
 library(nlme)
-library(lme4)
+#library(lme4)
 
 #### FUNCTIONS WE NEED ####
 glmCI.long <- function (model, transform = TRUE, robust = FALSE) 
@@ -208,7 +208,7 @@ summary( house.edu.gee.interact )
 par(mfrow=c(1,1))
 plot(food$timeSinceBaseline, food$fail,
      main="Overall Trend",
-     xlab="Months Since Baseline",
+     xlab="Months Since First Inspection",
      ylab="Failing Inspection")
 abline(lm(food$fail ~ food$timeSinceBaseline))
 ## not super informative, so let's look at some box plots over time
@@ -255,7 +255,7 @@ food.gee.ind <- gee(fail ~ chain + timeSinceBaseline,
 summary( food.gee.ind )
 
 ## to truly interpret, though, you need to exponentiate ##
-glmCI(food.gee.ind, robust=TRUE)
+glmCI.long(food.gee.ind, robust=TRUE)
 
 ## Exchangeable structure ##
 food.gee.exch <- gee(fail ~ chain + timeSinceBaseline,
