@@ -1,6 +1,8 @@
 ---
-title: "R: Machine Learning and Data Models"
-output: html_notebook
+title: 'R: Machine Learning and Data Models'
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r libraries and data loading, echo=FALSE}
@@ -310,7 +312,7 @@ Let's interpret the model with random intercepts:
       + Our's is 0.9035, so a chain restaurant is 9.65% *less* likely to fail inspection compared to another food handler at the same timepoint  
 
 Let's also try to see we would get if we assumed random slopes and intercepts:
-```{r logit AR-1, message=FALSE}
+```{r logit AR-1, message=FALSE, error=T}
 food.gee.AR1 <- gee(fail ~ chain + timeSinceBaseline,
                     id=License,
                     data=food,
