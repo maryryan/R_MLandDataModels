@@ -211,38 +211,11 @@ plot(food$timeSinceBaseline, food$fail,
      xlab="Months Since First Inspection",
      ylab="Failing Inspection")
 abline(lm(food$fail ~ food$timeSinceBaseline))
-## not super informative, so let's look at some box plots over time
+## not super informative, so we'll have to use our intuition.
+## probably use some random intercepts (some people start out failing,
+## some people start out passing). Could potentially justify use of 
+## random slopes
 
-## make a "time category" variable by splitting up time into 6-mo chunks ##
-## The chunks are subjective -- I made a decision based on
-## summary(food$timeSinceBaseline) -- Q3 was 46 mo so figured anything above
-## that could be one category
-food$timeCat <- rep(0, length(food$License))
-for(i in seq(length(food$License))){
-   if(food[i, "timeSinceBaseline"] == 0){
-      food[i, "timeCat"] <- 1
-   } else if(food[i, "timeSinceBaseline"] <= 6){
-      food[i, "timeCat"] <- 2
-   } else if(food[i, "timeSinceBaseline"] <=12){
-      food[i, "timeCat"] <- 3
-   } else if(food[i, "timeSinceBaseline"] <=18){
-      food[i, "timeCat"] <- 4
-   } else if(food[i, "timeSinceBaseline"] <=24){
-      food[i, "timeCat"] <- 5
-   } else if(food[i, "timeSinceBaseline"] <=30){
-      food[i, "timeCat"] <- 6
-   } else if(food[i, "timeSinceBaseline"] <=36){
-      food[i, "timeCat"] <- 7
-   } else if(food[i, "timeSinceBaseline"] <=42){
-      food[i, "timeCat"] <- 8
-   } else if(food[i, "timeSinceBaseline"] <= 48){
-      food[i, "timeCat"] <- 9
-   } else {
-      food[i, "timeCat"] <- 10
-   }
-}
-
-boxplot(food$fail ~ food$timeCat)
 
 #### GENERALIZED ESTIMATING EQUATIONS (GEES) ####
 ## Independence structure ##

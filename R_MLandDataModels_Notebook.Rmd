@@ -21,6 +21,19 @@ library(nlme)
 #library(lme4)
 
 #### FUNCTIONS WE NEED ####
+#####
+#####   ifelse1() : Helper function that allows for 
+#####                           returning a multivariate response
+#####                           based upon a univariate logical comparison
+#####
+##
+ifelse1 <- function (test, yes, no){
+    if (test) yes
+    else no
+        }
+##
+#####  glmCI.long() : Function to exponentiate coefficients and produces #####                 CIs for longitudinanal modeling (LMEs, GEEs)
+##
 glmCI.long <- function (model, transform = TRUE, robust = FALSE) 
 {
    link <- model$family$link
